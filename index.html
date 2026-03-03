@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REVE – Co muszę sprzedać</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --navy:   #1B3A5C;
+    --teal:   #2BB5AD;
+    --teal2:  #4ECDC4;
+    --teal3:  #7FD8D2;
+    --orange: #F4A01C;
+    --orange2:#FFC65A;
+    --bg:     #F0F7F7;
+    --white:  #FFFFFF;
+    --gray:   #E8F0F0;
+    --text:   #1a2e3b;
+    --red:    #E03535;
+    --green:  #27AE60;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, #254d6b 100%);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+  }
+
+  .logo-box { display:flex; align-items:center; gap:12px; flex-shrink:0; }
+  .logo-phone { width:54px; height:54px; }
+  .logo-text { line-height:1.1; }
+  .logo-text .l1 { color:var(--white);  font-size:13px; font-weight:700; letter-spacing:1px; }
+  .logo-text .l2 { color:var(--white);  font-size:13px; font-weight:700; letter-spacing:1px; }
+  .logo-text .l3 { color:var(--teal2); font-size:15px; font-weight:900; letter-spacing:2px; }
+
+  .header-divider { width:2px; height:50px; background:var(--teal); border-radius:2px; opacity:.6; }
+
+  .header-title { color:var(--white); font-size:clamp(18px,4vw,26px); font-weight:800; letter-spacing:.5px; }
+  .header-title span { color:var(--teal2); }
+
+  /* ─── CONTAINER ─── */
+  .container { max-width:860px; margin:0 auto; padding:20px 16px 60px; }
+
+  /* ─── CARDS ─── */
+  .card { background:var(--white); border-radius:14px; padding:22px 20px; margin-bottom:20px; box-shadow:0 2px 12px rgba(43,181,173,.10); }
+
+  .card-title {
+    font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:.8px;
+    color:var(--teal); margin-bottom:14px; display:flex; align-items:center; gap:8px;
+  }
+  .card-title::before { content:''; display:block; width:4px; height:18px; background:var(--teal); border-radius:2px; }
+
+  /* ─── USER INPUTS ─── */
+  .user-inputs { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:500px){ .user-inputs { grid-template-columns:1fr; } }
+
+  .field-group label { display:block; font-size:12px; font-weight:600; color:var(--navy); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; }
+
+  .field-group input {
+    width:100%; padding:11px 14px; border:2px solid var(--orange2); border-radius:8px;
+    font-size:15px; font-weight:600; background:#FFF9EE; color:var(--navy);
+    outline:none; transition:border .2s, box-shadow .2s;
+  }
+  .field-group input:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(244,160,28,.18); }
+  .field-group input::placeholder { color:#bbb; font-weight:400; }
+
+  /* ─── SAVE BAR ─── */
+  .save-bar {
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    margin-top:14px; padding:10px 14px; background:#f5fdfc;
+    border:1.5px solid var(--teal3); border-radius:9px;
+    font-size:12px; color:#5a8a85;
+  }
+  .save-bar .save-info { display:flex; align-items:center; gap:7px; }
+  .save-bar .save-dot { width:8px; height:8px; border-radius:50%; background:var(--green); }
+  .save-bar .save-dot.off { background:#ccc; }
+  .btn-clear {
+    padding:6px 14px; border:1.5px solid #f5c0c0; border-radius:7px; background:#FFF0F0;
+    color:var(--red); font-size:12px; font-weight:700; cursor:pointer; transition:background .15s;
+  }
+  .btn-clear:hover { background:#ffe0e0; }
+
+  /* ─── PROGRESS ─── */
+  .progress-meta { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .progress-meta .pts-done { font-size:22px; font-weight:800; color:var(--teal); }
+  .progress-meta .pts-goal { font-size:14px; color:#888; }
+  .progress-meta .pts-pct  { font-size:15px; font-weight:700; color:var(--navy); }
+
+  .progress-bar-bg { background:var(--gray); border-radius:10px; height:18px; overflow:hidden; }
+  .progress-bar-fill { height:100%; border-radius:10px; background:linear-gradient(90deg,var(--teal),var(--teal2)); transition:width .4s cubic-bezier(.4,0,.2,1); }
+  .progress-bar-fill.over   { background:linear-gradient(90deg,#27AE60,#2dcc74); }
+  .progress-bar-fill.danger { background:linear-gradient(90deg,#E03535,#f06060); }
+
+  .brakuje-badge { display:inline-flex; align-items:center; gap:6px; margin-top:10px; background:#FFF0F0; border:1.5px solid #f5c0c0; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:700; color:var(--red); }
+  .brakuje-badge.ok { background:#F0FFF5; border-color:#a0e4b8; color:var(--green); }
+
+  /* ─── TABLE ─── */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  thead tr { background:var(--navy); color:var(--white); }
+  thead th { padding:11px 10px; font-weight:700; text-align:center; font-size:12px; letter-spacing:.5px; text-transform:uppercase; }
+  thead th:first-child { text-align:left; border-radius:8px 0 0 0; }
+  thead th:last-child  { border-radius:0 8px 0 0; }
+  tbody tr { border-bottom:1px solid #e8f2f2; transition:background .15s; }
+  tbody tr:hover { background:#f5fdfc; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody td { padding:10px 10px; text-align:center; vertical-align:middle; }
+  tbody td:first-child { text-align:left; font-weight:600; color:var(--navy); }
+
+  .pts-badge { display:inline-block; background:var(--navy); color:var(--white); border-radius:6px; padding:3px 10px; font-size:12px; font-weight:700; }
+
+  .qty-input {
+    width:68px; padding:8px 6px; border:2px solid var(--orange2); border-radius:7px;
+    font-size:15px; font-weight:700; text-align:center; background:#FFF9EE; color:var(--navy);
+    outline:none; transition:border .2s, box-shadow .2s;
+  }
+  .qty-input:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(244,160,28,.18); }
+
+  .sum-cell { font-weight:700; color:var(--teal); font-size:15px; }
+  .iot-note  { font-size:11px; color:#aaa; display:block; font-weight:400; }
+
+  /* ─── WEEKLY ─── */
+  .weekly-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:12px; }
+
+  .weekly-item { background:linear-gradient(135deg,var(--navy) 0%,#254d6b 100%); border-radius:10px; padding:14px 14px 12px; color:var(--white); position:relative; overflow:hidden; }
+  .weekly-item::after { content:''; position:absolute; top:-18px; right:-18px; width:60px; height:60px; background:var(--teal); opacity:.12; border-radius:50%; }
+  .weekly-item .wi-name   { font-size:12px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; opacity:.8; margin-bottom:4px; }
+  .weekly-item .wi-val    { font-size:24px; font-weight:800; color:var(--teal2); }
+  .weekly-item .wi-unit   { font-size:11px; opacity:.6; margin-top:2px; }
+  .weekly-item .wi-brutto { font-size:11px; color:var(--orange2); margin-top:2px; }
+
+  /* ─── BUTTONS ROW ─── */
+  .btn-row { display:flex; gap:12px; flex-wrap:wrap; }
+
+  .btn-pdf {
+    flex:1; min-width:200px; display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:16px; background:linear-gradient(135deg,var(--navy) 0%,#254d6b 100%);
+    color:var(--white); border:none; border-radius:12px; font-size:16px; font-weight:700;
+    letter-spacing:.5px; cursor:pointer; box-shadow:0 4px 16px rgba(27,58,92,.30);
+    transition:transform .15s, box-shadow .15s;
+  }
+  .btn-pdf:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(27,58,92,.40); }
+  .btn-pdf:active { transform:translateY(0); }
+
+  /* ─── TOTAL ROW ─── */
+  .total-row td { background:var(--gray); font-weight:700; border-top:2px solid var(--teal); }
+
+  @media(max-width:600px){
+    .qty-input { width:56px; font-size:14px; }
+    thead th, tbody td { padding:8px 6px; font-size:12px; }
+    .pts-badge { font-size:11px; padding:2px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-box">
+    <svg class="logo-phone" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="12" y="6" width="40" height="68" rx="7" fill="#1B3A5C" stroke="#2BB5AD" stroke-width="2"/>
+      <rect x="16" y="14" width="32" height="46" rx="3" fill="#0e2338"/>
+      <circle cx="32" cy="67" r="3.5" fill="#2BB5AD" opacity=".7"/>
+      <polygon points="32,20 44,28 32,36" fill="#4ECDC4"/>
+      <polygon points="32,20 20,28 32,36" fill="#2BB5AD"/>
+      <polygon points="20,28 32,36 22,44" fill="#7FD8D2"/>
+      <polygon points="44,28 32,36 42,44" fill="#35A49D"/>
+      <polygon points="22,44 42,44 32,52" fill="#2BB5AD" opacity=".7"/>
+    </svg>
+    <div class="logo-text">
+      <div class="l1">REGION</div>
+      <div class="l2">CENTRUM</div>
+      <div class="l3">TELL</div>
+    </div>
+  </div>
+  <div class="header-divider"></div>
+  <div class="header-title">REVE &mdash; <span>Co muszę sprzedać?</span></div>
+</header>
+
+<div class="container">
+
+  <!-- DANE UŻYTKOWNIKA -->
+  <div class="card">
+    <div class="card-title">Twoje dane</div>
+    <div class="user-inputs">
+      <div class="field-group">
+        <label>Twoje imię</label>
+        <input type="text" id="userName" placeholder="Wpisz imię…" oninput="recalcAndSave()">
+      </div>
+      <div class="field-group">
+        <label>Mój cel na REVE (punkty)</label>
+        <input type="number" id="userGoal" placeholder="np. 1000" min="0" oninput="recalcAndSave()">
+      </div>
+    </div>
+    <!-- PASEK ZAPISU -->
+    <div class="save-bar">
+      <div class="save-info">
+        <div class="save-dot" id="saveDot"></div>
+        <span id="saveLabel">Dane są automatycznie zapisywane w przeglądarce</span>
+      </div>
+      <button class="btn-clear" onclick="clearAll()">🗑 Wyczyść dane</button>
+    </div>
+  </div>
+
+  <!-- POSTĘP -->
+  <div class="card">
+    <div class="card-title">Realizacja celu</div>
+    <div class="progress-meta">
+      <div>
+        <span class="pts-done" id="ptsDone">0</span>
+        <span class="pts-goal" id="ptsGoalLabel"> / — pkt</span>
+      </div>
+      <span class="pts-pct" id="ptsPct">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div id="brakujeBadge" class="brakuje-badge" style="display:none"></div>
+  </div>
+
+  <!-- TABELA PRODUKTÓW -->
+  <div class="card">
+    <div class="card-title">Produkty</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:38%">Produkt</th>
+            <th>Punktacja</th>
+            <th>Sztuk / Pkt</th>
+            <th>Suma PKT</th>
+          </tr>
+        </thead>
+        <tbody id="productsTbody"></tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="3" style="text-align:right;padding-right:14px">RAZEM PUNKTÓW:</td>
+            <td class="sum-cell" id="totalPts">0</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- TYGODNIOWY CEL -->
+  <div class="card">
+    <div class="card-title">Cel tygodniowy (÷ 4)</div>
+    <div class="weekly-grid" id="weeklyGrid"></div>
+  </div>
+
+  <!-- PRZYCISKI -->
+  <div class="btn-row">
+    <button class="btn-pdf" onclick="generatePDF()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+      </svg>
+      Generuj PDF – plan do druku
+    </button>
+  </div>
+
+</div>
+
+<script>
+// ─── PRODUKTY ────────────────────────────────────────────────────
+const PRODUCTS = [
+  { id:'pb',        name:'PB',         unit:'szt.', pts:50,  type:'unit' },
+  { id:'osc',       name:'OSC',        unit:'szt.', pts:30,  type:'unit' },
+  { id:'s24',       name:'S24',        unit:'szt.', pts:30,  type:'unit' },
+  { id:'mojOrange', name:'Mój Orange', unit:'szt.', pts:10,  type:'unit' },
+  { id:'klikai',    name:'KlikAI',     unit:'szt.', pts:200, type:'unit' },
+  { id:'energia',   name:'Energia',    unit:'szt.', pts:150, type:'unit' },
+  { id:'iot',       name:'IOT',        unit:'pkt',  pts:null,type:'pts'  },
+  { id:'akcesoria', name:'Akcesoria',  unit:'pkt',  pts:null,type:'pts_brutto' }
+];
+const LS_KEY = 'reve_kalkulator_v1';
+
+// ─── LOCALSTORAGE ────────────────────────────────────────────────
+function saveToLS() {
+  const data = { userName: document.getElementById('userName').value, userGoal: document.getElementById('userGoal').value };
+  PRODUCTS.forEach(p => { data['qty_'+p.id] = (document.getElementById('qty_'+p.id)||{}).value || ''; });
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  const dot = document.getElementById('saveDot');
+  const lbl = document.getElementById('saveLabel');
+  dot.className = 'save-dot';
+  lbl.textContent = 'Zapisano ✓ — dane wróćą gdy otworzysz tę stronę ponownie';
+  setTimeout(() => { lbl.textContent = 'Dane są automatycznie zapisywane w przeglądarce'; }, 2500);
+}
+
+function loadFromLS() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (data.userName) document.getElementById('userName').value = data.userName;
+    if (data.userGoal) document.getElementById('userGoal').value = data.userGoal;
+    PRODUCTS.forEach(p => {
+      const el = document.getElementById('qty_'+p.id);
+      if (el && data['qty_'+p.id]) el.value = data['qty_'+p.id];
+    });
+    return true;
+  } catch(e) { return false; }
+}
+
+function clearAll() {
+  if (!confirm('Wyczyścić wszystkie wpisane dane?')) return;
+  localStorage.removeItem(LS_KEY);
+  document.getElementById('userName').value = '';
+  document.getElementById('userGoal').value = '';
+  PRODUCTS.forEach(p => { const el = document.getElementById('qty_'+p.id); if(el) el.value = ''; });
+  const dot = document.getElementById('saveDot');
+  const lbl = document.getElementById('saveLabel');
+  dot.className = 'save-dot off';
+  lbl.textContent = 'Dane wyczyszczone';
+  recalc();
+}
+
+// ─── BUDUJ TABELĘ ────────────────────────────────────────────────
+function buildTable() {
+  const tbody = document.getElementById('productsTbody');
+  tbody.innerHTML = '';
+  PRODUCTS.forEach(p => {
+    const tr = document.createElement('tr');
+    const ptsCell = p.type==='unit'
+      ? `<span class="pts-badge">${p.pts} pkt/szt.</span>`
+      : `<span style="color:#aaa;font-size:12px">bezpośrednie pkt</span>`;
+    const extra = p.type==='pts_brutto'
+      ? `<span class="iot-note">wartość brutto: <span id="brutto_${p.id}">0,00 zł</span></span>`
+      : (p.type==='pts' ? `<span class="iot-note">wpisz punkty</span>` : '');
+    tr.innerHTML = `
+      <td>${p.name}${extra}</td>
+      <td>${ptsCell}</td>
+      <td><input class="qty-input" type="number" id="qty_${p.id}" min="0" placeholder="0" oninput="recalcAndSave()"></td>
+      <td class="sum-cell" id="sum_${p.id}">0</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ─── PRZELICZ ────────────────────────────────────────────────────
+function recalc() {
+  let total = 0;
+  PRODUCTS.forEach(p => {
+    const val = parseFloat((document.getElementById('qty_'+p.id)||{}).value) || 0;
+    let sum = p.type==='unit' ? val*p.pts : val;
+    if (p.type==='pts_brutto') {
+      const el = document.getElementById('brutto_'+p.id);
+      if (el) el.textContent = (val*1.23/0.2).toFixed(2).replace('.',',')+' zł';
+    }
+    const sumEl = document.getElementById('sum_'+p.id);
+    if (sumEl) sumEl.textContent = sum;
+    total += sum;
+  });
+  document.getElementById('totalPts').textContent = total;
+
+  const goal = parseFloat(document.getElementById('userGoal').value) || 0;
+  const pct  = goal>0 ? Math.min(100,(total/goal)*100) : 0;
+  const fill = document.getElementById('progressFill');
+  fill.style.width = pct+'%';
+  fill.className = 'progress-bar-fill'+(pct>=100?' over':(pct<30&&goal>0?' danger':''));
+  document.getElementById('ptsDone').textContent = total;
+  document.getElementById('ptsGoalLabel').textContent = goal>0 ? ` / ${goal} pkt` : ' / — pkt';
+  document.getElementById('ptsPct').textContent = goal>0 ? pct.toFixed(1)+'%' : '0%';
+
+  const badge = document.getElementById('brakujeBadge');
+  if (goal>0) {
+    const b = goal-total;
+    badge.style.display = 'inline-flex';
+    badge.className = b>0 ? 'brakuje-badge' : 'brakuje-badge ok';
+    badge.textContent = b>0 ? '⚠ Brakuje do celu: '+b+' pkt' : '✓ Cel osiągnięty! Nadwyżka: '+Math.abs(b)+' pkt';
+  } else badge.style.display='none';
+
+  buildWeekly(goal);
+}
+
+function recalcAndSave() { recalc(); saveToLS(); }
+
+// ─── TYGODNIOWY ──────────────────────────────────────────────────
+function buildWeekly(goal) {
+  const grid = document.getElementById('weeklyGrid');
+  grid.innerHTML = '';
+  let wTotal = 0;
+  PRODUCTS.forEach(p => {
+    const val = parseFloat((document.getElementById('qty_'+p.id)||{}).value) || 0;
+    if (!val) return;
+    const wVal = val/4;
+    const wPts = p.type==='unit' ? wVal*p.pts : wVal;
+    wTotal += wPts;
+    const div = document.createElement('div'); div.className='weekly-item';
+    let extra = p.type==='pts_brutto' ? `<div class="wi-brutto">≈ ${(wPts*1.23/0.2).toFixed(0)} zł brutto/tyg.</div>` : '';
+    div.innerHTML = `
+      <div class="wi-name">${p.name}</div>
+      <div class="wi-val">${wVal%1===0?wVal:wVal.toFixed(2)}</div>
+      <div class="wi-unit">${p.unit} / tydzień</div>
+      <div class="wi-unit" style="color:var(--teal2);font-weight:700">${wPts%1===0?wPts:wPts.toFixed(1)} pkt</div>${extra}`;
+    grid.appendChild(div);
+  });
+  if (wTotal>0) {
+    const div = document.createElement('div'); div.className='weekly-item';
+    div.style.background='linear-gradient(135deg,#1a5c4a 0%,#27AE60 100%)';
+    const gw = goal>0?goal/4:0;
+    div.innerHTML=`<div class="wi-name">CEL TYGODN.</div><div class="wi-val">${gw%1===0?gw:gw.toFixed(0)}</div><div class="wi-unit">pkt / tydzień</div><div class="wi-unit" style="color:#a0ffc8;font-weight:700">plan: ${wTotal%1===0?wTotal:wTotal.toFixed(1)} pkt</div>`;
+    grid.appendChild(div);
+  } else {
+    grid.innerHTML='<p style="color:#aaa;font-size:13px;padding:10px 0">Wpisz ilości produktów, aby zobaczyć cel tygodniowy.</p>';
+  }
+}
+
+// ─── GENERUJ PDF ─────────────────────────────────────────────────
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  const navy  = [27,58,92], teal=[43,181,173], teal2=[78,205,196];
+  const orange= [244,160,28], white=[255,255,255], gray=[240,247,247];
+  const W=210, H=297, M=10; // margin
+
+  const userName = document.getElementById('userName').value || '—';
+  const userGoal = document.getElementById('userGoal').value || '—';
+  const totalNow = parseInt(document.getElementById('totalPts').textContent)||0;
+  const goalNum  = parseFloat(document.getElementById('userGoal').value)||0;
+  const pct      = goalNum>0 ? Math.min(100,(totalNow/goalNum)*100) : 0;
+
+  // ── Nagłówek (kompaktowy) ──────────────────────────────────────
+  doc.setFillColor(...navy);
+  doc.rect(0,0,W,26,'F');
+
+  // Logo telefon (miniaturka)
+  doc.setFillColor(...teal); doc.roundedRect(M,3,13,18,2,2,'F');
+  doc.setFillColor(14,35,56); doc.rect(M+1.5,6,10,10,'F');
+  doc.setFillColor(...teal2); doc.triangle(M+6.5,7,M+10,9.5,M+6.5,12,'F');
+  doc.setFillColor(...teal);  doc.triangle(M+6.5,7,M+3,9.5,M+6.5,12,'F');
+  doc.setFillColor(...teal);  doc.circle(M+6.5,19,1,'F');
+
+  doc.setTextColor(...white); doc.setFont('helvetica','bold'); doc.setFontSize(6);
+  doc.text('REGION',M+15.5,9); doc.text('CENTRUM',M+15.5,13);
+  doc.setTextColor(...teal2); doc.setFontSize(6.5); doc.text('TELL',M+15.5,17);
+
+  doc.setFillColor(...teal); doc.rect(M+34,5,0.8,14,'F');
+
+  doc.setTextColor(...white); doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text('REVE \u2013 Co musz\u0119 sprzeda\u0107?', M+38, 16);
+
+  // ── Dane pracownika ──────────────────────────────────────────
+  let y = 30;
+  doc.setFillColor(...gray); doc.roundedRect(M,y,W-M*2,14,3,3,'F');
+  doc.setTextColor(...navy); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+  doc.text('Pracownik:', M+3, y+6); doc.setFont('helvetica','normal'); doc.text(userName, M+28, y+6);
+  doc.setFont('helvetica','bold'); doc.text('Cel REVE:', M+90, y+6); doc.setFont('helvetica','normal'); doc.text(String(userGoal)+' pkt', M+110, y+6);
+  doc.setFont('helvetica','bold'); doc.text('Zaplanowane:', M+3, y+11);
+  doc.setTextColor(...teal); doc.setFont('helvetica','normal'); doc.text(totalNow+' pkt ('+pct.toFixed(1)+'%)', M+30, y+11);
+
+  y = 48;
+
+  // ── Symbole – układ kompaktowy ────────────────────────────────
+  // 12 symboli na wiersz, rozmiar 8mm, padding 2mm
+  const COLS = 12;
+  const SYM  = 7;    // symbol size mm
+  const GAP  = 2.5;  // gap between symbols
+  const ROW_H = SYM + GAP + 4; // row height (symbol + label)
+  const usableW = W - M*2;
+  const cellW = usableW / COLS;
+
+  // Funkcje kształtów
+  const shapes = {
+    pb:        (x,ys) => { doc.setDrawColor(...teal);     doc.setLineWidth(.5); doc.rect(x,ys,SYM,SYM); },
+    osc:       (x,ys) => { doc.setDrawColor(...navy);     doc.setLineWidth(.5); doc.circle(x+SYM/2,ys+SYM/2,SYM/2); },
+    s24:       (x,ys) => { doc.setDrawColor(200,100,20);  doc.setLineWidth(.5); doc.roundedRect(x,ys,SYM,SYM,1.5,1.5); },
+    mojOrange: (x,ys) => { doc.setDrawColor(...orange);   doc.setLineWidth(.5); doc.circle(x+SYM/2,ys+SYM/2,SYM/2); },
+    klikai:    (x,ys) => {
+      doc.setDrawColor(27,58,92); doc.setLineWidth(.5);
+      const cx=x+SYM/2, cy=ys+SYM/2, r=SYM/2, n=5;
+      for(let i=0;i<n;i++){
+        const a=(i*2*Math.PI/n)-Math.PI/2, b=((i+.5)*2*Math.PI/n)-Math.PI/2;
+        doc.line(cx+r*Math.cos(a),cy+r*Math.sin(a),cx+r*.45*Math.cos(b),cy+r*.45*Math.sin(b));
+        doc.line(cx+r*.45*Math.cos(b),cy+r*.45*Math.sin(b),cx+r*Math.cos(a+2*Math.PI/n),cy+r*Math.sin(a+2*Math.PI/n));
+      }
+    },
+    energia:   (x,ys) => { doc.setDrawColor(39,174,96);  doc.setLineWidth(.5); doc.triangle(x+SYM/2,ys,x+SYM,ys+SYM,x,ys+SYM); },
+    iot:       (x,ys) => { doc.setDrawColor(150,80,200); doc.setLineWidth(.5); doc.roundedRect(x,ys,SYM,SYM,3,3); },
+    akcesoria: (x,ys) => {
+      doc.setDrawColor(200,40,40); doc.setLineWidth(.5);
+      doc.rect(x,ys,SYM,SYM);
+      doc.line(x,ys,x+SYM,ys+SYM); doc.line(x+SYM,ys,x,ys+SYM);
+    }
+  };
+
+  PRODUCTS.forEach(p => {
+    const val = parseFloat((document.getElementById('qty_'+p.id)||{}).value)||0;
+    if (!val) return;
+    const count = Math.round(val);
+
+    // Nagłówek sekcji produktu (pasek)
+    if (y+7 > H-14) { doc.addPage(); y=14; }
+    doc.setFillColor(...navy); doc.roundedRect(M,y,W-M*2,7,1.5,1.5,'F');
+    doc.setTextColor(...white); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+    const info = p.type==='unit'
+      ? `${p.name}  \u2014  ${count} szt. \u00d7 ${p.pts} pkt = ${count*p.pts} pkt`
+      : `${p.name}  \u2014  ${count} pkt`;
+    doc.text(info, M+3, y+5);
+    y += 9;
+
+    // Symbole
+    const fn = shapes[p.id] || shapes.osc;
+    let col = 0;
+    for (let i=0; i<count; i++) {
+      if (y + SYM + 5 > H-14) { doc.addPage(); y=14; col=0; }
+      const sx = M + col*cellW + (cellW-SYM)/2;
+      fn(sx, y);
+      col++;
+      if (col>=COLS) { col=0; y+=ROW_H; }
+    }
+    if (col>0) y+=ROW_H;
+    y+=3; // odstęp między produktami
+  });
+
+  // ── Stopka ─────────────────────────────────────────────────────
+  const pages = doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i);
+    doc.setFillColor(...navy); doc.rect(0,H-10,W,10,'F');
+    doc.setTextColor(...teal2); doc.setFont('helvetica','normal'); doc.setFontSize(7);
+    doc.text('Region Centrum TELL  \u2022  REVE \u2013 Co musz\u0119 sprzeda\u0107?', M, H-3);
+    doc.setTextColor(150,200,200);
+    doc.text(`${userName}  |  Cel: ${userGoal} pkt`, W-M, H-3, {align:'right'});
+  }
+
+  const safe = userName.replace(/[^a-zA-Z0-9\u00C0-\u017E]/g,'_');
+  doc.save(`REVE_Plan_${safe}.pdf`);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────
+buildTable();
+const loaded = loadFromLS();
+if (!loaded) {
+  document.getElementById('saveDot').className = 'save-dot off';
+  document.getElementById('saveLabel').textContent = 'Brak zapisanych danych – zacznij wpisywać';
+}
+recalc();
+</script>
+</body>
+</html>
